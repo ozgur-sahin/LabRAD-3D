@@ -1,0 +1,8 @@
+*.h5
+*.dat
+*.csv
+*.gz
+*.tgz
+/data/
+/old_cct/
+/scan_lists/
