@@ -5,7 +5,7 @@ from qtui.QCustomSpinBox import QCustomSpinBox
 from twisted.internet.defer import inlineCallbacks, returnValue
 import sys
 # sys.path.append('/home/cct/LabRAD/common/abstractdevices')
-from common.okfpgaservers.dacserver.DacConfiguration import hardwareConfiguration as hc
+from common.okfpgaservers.dacserver.DacConfiguration_Horizontal import hardwareConfiguration as hc
 
 UpdateTime = 50 # ms
 SIGNALID = 270836
@@ -256,7 +256,7 @@ class CHANNEL_CONTROL (QtGui.QWidget):
         elecLayout = QtGui.QGridLayout()
         elecBox.setLayout(elecLayout)
         # set electrode positions (not the best way, but it works)
-        trapElecLayout = [[2,2], [0,2], [1,2], [2,4], [2,3], [4,2], [3,2], [2,0], [2,1], [0,0], [4,0]]
+        trapElecLayout = [[0,4], [8,4], [8,8], [6,8], [4,8], [2,8], [0,8], [8,0], [6,0], [4,0], [2,0], [0,0], [6,6], [2,6], [6,2], [2,2], [2,4], [6,4]]
         if bool(hc.sma_dict):
             layout.addWidget(smaBox, 0, 0)
         layout.addWidget(elecBox, 0, 1)

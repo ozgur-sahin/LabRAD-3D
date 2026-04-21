@@ -34,18 +34,25 @@ class hardwareConfiguration(object):
     elec_dict = {
     	# This is the mapping of DAC chip to DAC output pin
 
-        #75um tilted trap, circular breakout board
-        'T-DC0': channelConfiguration(14, trapElectrodeNumber='T-DC0'), # center
-        'T-DC1': channelConfiguration(20, trapElectrodeNumber='T-DC1'),
-        'T-DC2': channelConfiguration(21, trapElectrodeNumber='T-DC2'),
-        'T-DC3': channelConfiguration(10, trapElectrodeNumber='T-DC3'),
-        'T-DC4': channelConfiguration(22, trapElectrodeNumber='T-DC4'),
-        'T-DC5': channelConfiguration(9, trapElectrodeNumber='T-DC5'),
-        'T-DC6': channelConfiguration(12, trapElectrodeNumber='T-DC6'),
-        'T-DC7': channelConfiguration(19, trapElectrodeNumber='T-DC7'),
-        'T-DC8': channelConfiguration(11, trapElectrodeNumber='T-DC8'),
-        'T-RF1 bias': channelConfiguration(15, trapElectrodeNumber='T-RF1 bias'), # RF1 bias
-        'T-RF2 bias': channelConfiguration(17, trapElectrodeNumber='T-RF2 bias'), # RF2 bias
+        #horizontal trap, circular breakout board
+        'T-DC1': channelConfiguration(1, trapElectrodeNumber='T-DC1'), # endcap
+        'T-DC2': channelConfiguration(8, trapElectrodeNumber='T-DC2'), #endcap
+        'T-DC3': channelConfiguration(17, trapElectrodeNumber='T-DC3'), #finger
+        'T-DC4': channelConfiguration(4, trapElectrodeNumber='T-DC4'), #finger
+        'T-DC5': channelConfiguration(3, trapElectrodeNumber='T-DC5'), #finger
+        'T-DC6': channelConfiguration(16, trapElectrodeNumber='T-DC6'), #finger
+        'T-DC7': channelConfiguration(15, trapElectrodeNumber='T-DC7'), #finger
+        'T-DC8': channelConfiguration(22, trapElectrodeNumber='T-DC8'), #finger
+        'T-DC9': channelConfiguration(10, trapElectrodeNumber='T-DC9'), #finger
+        'T-DC10': channelConfiguration(23, trapElectrodeNumber='T-DC10'), #finger
+        'T-DC11': channelConfiguration(11, trapElectrodeNumber='T-DC11'), #finger
+        'T-DC12': channelConfiguration(24, trapElectrodeNumber='T-DC12'), #finger
+        'T-DC13': channelConfiguration(6, trapElectrodeNumber='T-DC13'), #center
+        'T-DC14': channelConfiguration(14, trapElectrodeNumber='T-DC14'), #center
+        'T-DC15': channelConfiguration(21, trapElectrodeNumber='T-DC15'), #center
+        'T-DC16': channelConfiguration(12, trapElectrodeNumber='T-DC16'), #center
+        'T-RF1 bias': channelConfiguration(2, trapElectrodeNumber='T-RF1 bias'), # RF1 bias
+        'T-RF2 bias': channelConfiguration(5, trapElectrodeNumber='T-RF2 bias'), # RF2 bias
 
         # # Calbration:
         # '06': channelConfiguration(6, trapElectrodeNumber=6),
