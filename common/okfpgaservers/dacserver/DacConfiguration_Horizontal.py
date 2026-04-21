@@ -133,26 +133,26 @@ class hardwareConfiguration(object):
 
     notused_dict = {
 
-        #75um vertical trap, circular breakout board
-        'V-DC0': channelConfiguration(28, trapElectrodeNumber='V-DC0'), # center
-        'V-DC1': channelConfiguration(6, trapElectrodeNumber='V-DC1'),
-        'V-DC2': channelConfiguration(7, trapElectrodeNumber='V-DC2'),
-        'V-DC3': channelConfiguration(24, trapElectrodeNumber='V-DC3'),
-        'V-DC4': channelConfiguration(16, trapElectrodeNumber='V-DC4'),
-        'V-DC5': channelConfiguration(25, trapElectrodeNumber='V-DC5'),
-        'V-DC6': channelConfiguration(27, trapElectrodeNumber='V-DC6'),
-        'V-DC7': channelConfiguration(8, trapElectrodeNumber='V-DC7'),
-        'V-DC8': channelConfiguration(26, trapElectrodeNumber='V-DC8'),
-        'V-RF1 bias': channelConfiguration(18, trapElectrodeNumber='V-RF1 bias'), # RF1 bias
-        'V-RF2 bias': channelConfiguration(13, trapElectrodeNumber='V-RF2 bias'), # RF2 bias
+        # #75um vertical trap, circular breakout board
+        # 'V-DC0': channelConfiguration(28, trapElectrodeNumber='V-DC0'), # center
+        # 'V-DC1': channelConfiguration(6, trapElectrodeNumber='V-DC1'),
+        # 'V-DC2': channelConfiguration(7, trapElectrodeNumber='V-DC2'),
+        # 'V-DC3': channelConfiguration(24, trapElectrodeNumber='V-DC3'),
+        # 'V-DC4': channelConfiguration(16, trapElectrodeNumber='V-DC4'),
+        # 'V-DC5': channelConfiguration(25, trapElectrodeNumber='V-DC5'),
+        # 'V-DC6': channelConfiguration(27, trapElectrodeNumber='V-DC6'),
+        # 'V-DC7': channelConfiguration(8, trapElectrodeNumber='V-DC7'),
+        # 'V-DC8': channelConfiguration(26, trapElectrodeNumber='V-DC8'),
+        # 'V-RF1 bias': channelConfiguration(18, trapElectrodeNumber='V-RF1 bias'), # RF1 bias
+        # 'V-RF2 bias': channelConfiguration(13, trapElectrodeNumber='V-RF2 bias'), # RF2 bias
 
-        #Totally unused electrodes
-        'Channel01':channelConfiguration(1, trapElectrodeNumber='Channel01'),
-        'Channel02':channelConfiguration(2, trapElectrodeNumber='Channel02'),
-        'Channel03':channelConfiguration(3, trapElectrodeNumber='Channel03'),
-        'Channel04':channelConfiguration(4, trapElectrodeNumber='Channel04'), # broken
-        'Channel05':channelConfiguration(5, trapElectrodeNumber='Channel05'),
-        'Channel23':channelConfiguration(23, trapElectrodeNumber='Channel23'),
+        # #Totally unused electrodes
+        # 'Channel01':channelConfiguration(1, trapElectrodeNumber='Channel01'),
+        # 'Channel02':channelConfiguration(2, trapElectrodeNumber='Channel02'),
+        # 'Channel03':channelConfiguration(3, trapElectrodeNumber='Channel03'),
+        # 'Channel04':channelConfiguration(4, trapElectrodeNumber='Channel04'), # broken
+        # 'Channel05':channelConfiguration(5, trapElectrodeNumber='Channel05'),
+        # 'Channel23':channelConfiguration(23, trapElectrodeNumber='Channel23'),
         
                }
 
