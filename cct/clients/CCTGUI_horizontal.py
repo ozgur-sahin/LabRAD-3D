@@ -97,7 +97,7 @@ class CCTGUI(QtGui.QMainWindow):
         centralWidget = QtGui.QWidget()
         centralWidget.setLayout(gridLayout)
         self.setCentralWidget(centralWidget)
-        self.setWindowTitle('CCTGUI')
+        self.setWindowTitle('CCTGUI Horizontal Trap')
 
 
     def makeScriptControl(self, reactor):
