@@ -4,7 +4,7 @@ source virtualenvwrapper.sh
 workon 'labrad'
 
 cd ~/LabRAD/cct/clients
-python CCTGUI.py &
+python CCTGUI_horizontal.py &
 
 workon 'labrad'
 cd ~/LabRAD/common/devel/RealSimpleGrapher

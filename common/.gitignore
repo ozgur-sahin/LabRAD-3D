@@ -13,7 +13,7 @@ PICOMOTOR_CONTROL_config.py
 APT_config.py
 connection_config.py
 *~
-DacConfiguration.py
+# DacConfiguration.py
 .settings
 *.npy
 devel/bum/scriptscanner2/PulseSequence.pdf

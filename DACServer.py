@@ -26,7 +26,7 @@ from scipy.interpolate import UnivariateSpline as UniSpline
 from numpy import genfromtxt, arange
 import numpy as np
 from api import api
-from DacConfiguration import hardwareConfiguration as hc
+from DacConfiguration_Horizontal import hardwareConfiguration as hc
 
 SERVERNAME = 'DAC Server'
 SIGNALID = 270837
@@ -234,6 +234,8 @@ class DACServer(LabradServer):
             print e
             yield self.setVoltagesZero()
         print self.registry_path
+        print 'dac_dict:'
+        print dac_dict.keys()
 
     def initializeBoard(self):
         connected = self.api.connectOKBoard()
@@ -401,6 +403,9 @@ class DACServer(LabradServer):
         """
         #print 'in get analog voltages',
         #print self.current_voltages.items()
+        # print self.current_voltages.items()
+        print "The electrodes are:"
+        print hc.elec_dict.keys()
         return self.current_voltages.items()        
 
     @setting( 10, "Get Multipole Values",returns='*(s, v)')

@@ -26,18 +26,18 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.controls = {k: QCustomSpinBox(k, (-5000.,5000.)) for k in self.multipoles}
         self.multipoleValues = {k: 0.0 for k in self.multipoles}
         # make ability to tune the ion trapping height
-        self.pSlider = QtGui.QSlider(QtCore.Qt.Vertical)
-        self.pSlider.setFixedHeight(250)
-        self.pSlider.setMinimum(0)
-        self.pSlider.setMaximum(len(self.position_vector)-1)
-        # print(self.position_vector)
-        self.pSlider.setValue(self.position_vector.index(str(self.position)))
-        self.pSlider.setTickPosition(QtGui.QSlider.TicksBelow)
-        self.pSlider.setTickInterval(1)
-        self.pLabel = QtGui.QLabel('H: ' + str(self.position))
-        self.pLabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
-        self.ctrlPosLayout.addWidget(self.pLabel)
-        self.ctrlPosLayout.addWidget(self.pSlider)
+        # self.pSlider = QtGui.QSlider(QtCore.Qt.Vertical)
+        # self.pSlider.setFixedHeight(250)
+        # self.pSlider.setMinimum(0)
+        # self.pSlider.setMaximum(len(self.position_vector)-1)
+        # # print(self.position_vector)
+        # self.pSlider.setValue(self.position_vector.index(str(self.position)))
+        # self.pSlider.setTickPosition(QtGui.QSlider.TicksBelow)
+        # self.pSlider.setTickInterval(1)
+        # self.pLabel = QtGui.QLabel('H: ' + str(self.position))
+        # self.pLabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+        # self.ctrlPosLayout.addWidget(self.pLabel)
+        # self.ctrlPosLayout.addWidget(self.pSlider)
         self.ctrlPosButtonLayout.addLayout(self.ctrlPosLayout)
         for ik, k in enumerate(self.multipoles):
             if len(self.multipoles) > 8:
@@ -89,7 +89,7 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         # connect all the button controls
         for k in self.multipoles:
             self.controls[k].onNewValues.connect(self.inputHasUpdated)
-        self.pSlider.valueChanged.connect(self.inputHasUpdated)
+        # self.pSlider.valueChanged.connect(self.inputHasUpdated)
         self.multipoleFileSelectButton.released.connect(self.selectCFile)
         self.displayAnalogVoltages.released.connect(self.displayVoltages)
         self.displayMultipoleValues.released.connect(self.displayMultipoles)
@@ -127,7 +127,7 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.inputUpdated = True
         for k in self.multipoles:
             self.multipoleValues[k] = round(self.controls[k].spinLevel.value(), 3)
-        self.position = self.position_vector[self.pSlider.value()]
+        # self.position = self.position_vector[self.pSlider.value()]
         self.pLabel.setText('H: ' + str(self.position))
 
     def sendToServer(self):
@@ -188,7 +188,7 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.inputUpdated = True
         # change trapping position
         temp_position = yield self.dacserver.get_position(1)
-        self.pSlider.setValue(self.position_vector.index(str(temp_position)))
+        # self.pSlider.setValue(self.position_vector.index(str(temp_position)))
         self.pLabel.setText('H: ' + str(temp_position))
         # change multipoles
         temp_multipoles = yield self.dacserver.get_multipole_values(1)
@@ -206,7 +206,7 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.inputUpdated = True
         # change trapping position
         temp_position = yield self.dacserver.get_position(2)
-        self.pSlider.setValue(self.position_vector.index(str(temp_position)))
+        # self.pSlider.setValue(self.position_vector.index(str(temp_position)))
         self.pLabel.setText('H: ' + str(temp_position))
         # change multipoles
         temp_multipoles = yield self.dacserver.get_multipole_values(2)
@@ -231,8 +231,8 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         for (k,v) in multipoles:
             self.controls[k].setValueNoSignal(v)
         pos = yield self.dacserver.get_position()
-        self.pSlider.setValue(self.position_vector.index(str(pos)))
-        self.pLabel.setText('H: ' + str(pos))
+        # self.pSlider.setValue(self.position_vector.index(str(pos)))
+        # self.pLabel.setText('H: ' + str(pos))
 
     def closeEvent(self, x):
         self.reactor.stop()
@@ -402,6 +402,7 @@ class CHANNEL_MONITOR(QtGui.QWidget):
     @inlineCallbacks
     def followSignal(self, x, s):        
         av = yield self.dacserver.get_analog_voltages()
+        print av
         brightness = 210
         darkness = 255 - brightness           
         for (k, v) in av:
