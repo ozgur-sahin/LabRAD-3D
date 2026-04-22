@@ -26,7 +26,7 @@ from scipy.interpolate import UnivariateSpline as UniSpline
 from numpy import genfromtxt, arange
 import numpy as np
 from api import api
-from DacConfiguration import hardwareConfiguration as hc
+from DacConfiguration_Horizontal import hardwareConfiguration as hc
 import time
 
 SERVERNAME = 'DAC Server'
@@ -88,7 +88,8 @@ class Control(object):
         self.num_columns = len(body[0])
         self.multipole_matrix = {elec: {mult: [float(body[eindex + mindex*len(hc.elec_dict)][i]) for i in range(self.num_columns)] for mindex, mult in enumerate(self.multipoles)} for eindex, elec in enumerate(sorted(hc.elec_dict.keys()))}
         # print self.multipole_matrix
-        self.position_vector = body[-1]
+        # self.position_vector = body[-1]
+        self.position_vector = '0'
         print self.position_vector.index(str(self.position))
         if sys.platform.startswith('linux'): self.Cfile_name = self.Cfile_path.split('/')[-1]
         elif sys.platform.startswith('win'): self.Cfile_name = self.Cfile_path.split('\\')[-1]

@@ -51,8 +51,8 @@ class hardwareConfiguration(object):
         'T-DC14': channelConfiguration(14, trapElectrodeNumber='T-DC14'), #center
         'T-DC15': channelConfiguration(21, trapElectrodeNumber='T-DC15'), #center
         'T-DC16': channelConfiguration(12, trapElectrodeNumber='T-DC16'), #center
-        'T-RF1 bias': channelConfiguration(2, trapElectrodeNumber='T-RF1 bias'), # RF1 bias
-        'T-RF2 bias': channelConfiguration(5, trapElectrodeNumber='T-RF2 bias'), # RF2 bias
+        # 'T-RF1 bias': channelConfiguration(2, trapElectrodeNumber='T-RF1 bias'), # RF1 bias
+        # 'T-RF2 bias': channelConfiguration(5, trapElectrodeNumber='T-RF2 bias'), # RF2 bias
 
         # # Calbration:
         # '06': channelConfiguration(6, trapElectrodeNumber=6),
