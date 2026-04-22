@@ -256,7 +256,7 @@ class CHANNEL_CONTROL (QtGui.QWidget):
         elecLayout = QtGui.QGridLayout()
         elecBox.setLayout(elecLayout)
         # set electrode positions (not the best way, but it works)
-        trapElecLayout = [[0,4], [8,4], [8,8], [6,8], [4,8], [2,8], [0,8], [8,0], [6,0], [4,0], [2,0], [0,0], [6,6], [2,6], [6,2], [2,2], [2,4], [6,4]]
+        trapElecLayout = [[0,4], [4,0], [2,0], [0,0], [6,6], [2,6], [6,2], [2,2], [8,4], [8,8], [6,8], [4,8], [2,8], [0,8], [8,0], [6,0], [2,4], [6,4]]
         if bool(hc.sma_dict):
             layout.addWidget(smaBox, 0, 0)
         layout.addWidget(elecBox, 0, 1)
@@ -349,7 +349,7 @@ class CHANNEL_MONITOR(QtGui.QWidget):
         elecLayout.setColumnStretch(11, 2)
         elecBox.setLayout(elecLayout)
         # set electrode positions (not the best way, but it works)
-        trapElecLayout = [[0,4], [8,4], [8,8], [6,8], [4,8], [2,8], [0,8], [8,0], [6,0], [4,0], [2,0], [0,0], [6,6], [2,6], [6,2], [2,2], [2,4], [6,4]]
+        trapElecLayout = [[0,4], [4,0], [2,0], [0,0], [6,6], [2,6], [6,2], [2,2], [8,4], [8,8], [6,8], [4,8], [2,8], [0,8], [8,0], [6,0], [2,4], [6,4]]
         if bool(hc.sma_dict):
             layout.addWidget(smaBox, 0, 0)
         layout.addWidget(elecBox, 0, 1)
@@ -362,7 +362,9 @@ class CHANNEL_MONITOR(QtGui.QWidget):
                 s = hc.sma_dict[k].smaOutNumber+1
 
         elecList = hc.elec_dict.keys()
+        print 'lol'
         elecList.sort()
+        print elecList
         if bool(hc.centerElectrode):
             elecList.pop(hc.centerElectrode-1)
         for i,e in enumerate(elecList):
