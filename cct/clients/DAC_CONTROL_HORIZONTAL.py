@@ -256,7 +256,7 @@ class CHANNEL_CONTROL (QtGui.QWidget):
         elecLayout = QtGui.QGridLayout()
         elecBox.setLayout(elecLayout)
         # set electrode positions (not the best way, but it works)
-        trapElecLayout = [[0,4], [4,0], [2,0], [0,0], [6,6], [2,6], [6,2], [2,2], [8,4], [8,8], [6,8], [4,8], [2,8], [0,8], [8,0], [6,0], [2,4], [6,4]]
+        trapElecLayout = [[8,4], [4,0], [2,0], [0,0], [6,6], [2,6], [6,2], [2,2], [0,4], [8,8], [6,8], [4,8], [2,8], [0,8], [8,0], [6,0], [2,4], [6,4], [4,2], [4,6]]
         if bool(hc.sma_dict):
             layout.addWidget(smaBox, 0, 0)
         layout.addWidget(elecBox, 0, 1)
@@ -334,6 +334,7 @@ class CHANNEL_MONITOR(QtGui.QWidget):
     def makeGUI(self):      
         self.dacDict = dict(hc.elec_dict.items() + hc.sma_dict.items())
         self.displays = {k: QtGui.QLCDNumber() for k in self.dacDict.keys()}
+        print self.displays
         layout = QtGui.QGridLayout()
         if bool(hc.sma_dict):
             smaBox = QtGui.QGroupBox('SMA Out')
@@ -349,7 +350,7 @@ class CHANNEL_MONITOR(QtGui.QWidget):
         elecLayout.setColumnStretch(11, 2)
         elecBox.setLayout(elecLayout)
         # set electrode positions (not the best way, but it works)
-        trapElecLayout = [[0,4], [4,0], [2,0], [0,0], [6,6], [2,6], [6,2], [2,2], [8,4], [8,8], [6,8], [4,8], [2,8], [0,8], [8,0], [6,0], [2,4], [6,4]]
+        trapElecLayout = [[8,4], [4,0], [2,0], [0,0], [6,6], [2,6], [6,2], [2,2], [0,4], [8,8], [6,8], [4,8], [2,8], [0,8], [8,0], [6,0], [4,2], [4,6]]
         if bool(hc.sma_dict):
             layout.addWidget(smaBox, 0, 0)
         layout.addWidget(elecBox, 0, 1)
@@ -362,9 +363,8 @@ class CHANNEL_MONITOR(QtGui.QWidget):
                 s = hc.sma_dict[k].smaOutNumber+1
 
         elecList = hc.elec_dict.keys()
-        print 'lol'
         elecList.sort()
-        print elecList
+        print 'Eleclist: ', elecList
         if bool(hc.centerElectrode):
             elecList.pop(hc.centerElectrode-1)
         for i,e in enumerate(elecList):
@@ -373,6 +373,7 @@ class CHANNEL_MONITOR(QtGui.QWidget):
             if int(i) <= 25:
                 elecLayout.addWidget(QtGui.QLabel(e), trapElecLayout[int(i)][0], trapElecLayout[int(i)][1])
                 elecLayout.addWidget(self.displays[e], trapElecLayout[int(i)][0], trapElecLayout[int(i)][1]+1)
+                print i, e, self.displays[e]
         if bool(hc.centerElectrode):
             elecLayout.addWidget(QtGui.QLabel('Center'), 4, 4)
             elecLayout.addWidget(self.displays[str(hc.centerElectrode).zfill(2)], 4, 5, 1, 1)      
