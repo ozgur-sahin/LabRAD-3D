@@ -1,5 +1,5 @@
 import ok
-from DacConfiguration import hardwareConfiguration
+from DacConfiguration_Horizontal import hardwareConfiguration
 
 class api(object):
     '''class containing all commands for interfacing with the fpga'''
