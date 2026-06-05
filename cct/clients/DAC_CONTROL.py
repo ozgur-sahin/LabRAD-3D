@@ -91,10 +91,8 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
             self.controls[k].onNewValues.connect(self.inputHasUpdated)
         self.pSlider.valueChanged.connect(self.inputHasUpdated)
         self.multipoleFileSelectButton.released.connect(self.selectCFile)
-        # self.displayAnalogVoltages.released.connect(self.displayVoltages)
-        self.displayAnalogVoltages.released.connect(self.stopMultipoleSweep)
-        # self.displayMultipoleValues.released.connect(self.displayMultipoles)
-        self.displayMultipoleValues.released.connect(self.startMultipoleSweep)
+        self.displayAnalogVoltages.released.connect(self.displayVoltages)
+        self.displayMultipoleValues.released.connect(self.displayMultipoles)
         self.zeroMultipoleValues.released.connect(self.zeroMultipoles)
         self.writeMultipoleValues1.released.connect(self.writeMultipoles1)
         self.readMultipoleValues1.released.connect(self.readMultipoles1)
@@ -220,12 +218,6 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.inputUpdated = True
         for k in self.multipoles:
             self.controls[k].spinLevel.setValue(0.0)
-    
-    def startMultipoleSweep(self):
-        self.dacserver.start_multipole_oscillation("U2", 1.2, 0.05, 1.0, 10.0)
-
-    def stopMultipoleSweep(self):
-        self.dacserver.stop_multipole_oscillation(True)
         
     @inlineCallbacks    
     def setupListeners(self):
