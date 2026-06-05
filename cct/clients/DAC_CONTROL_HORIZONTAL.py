@@ -222,7 +222,7 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
             self.controls[k].spinLevel.setValue(0.0)
 
     def startMultipoleSweep(self):
-        self.dacserver.start_multipole_oscillation("U2", 1.2, 0.05, 1.0, 10.0)
+        self.dacserver.start_multipole_oscillation("Ez", 0, 0.5, 0.05, 2.0)
 
     def stopMultipoleSweep(self):
         self.dacserver.stop_multipole_oscillation(True)

@@ -593,7 +593,7 @@ class DACServer(LabradServer):
         vector = list(state["vector"])
         vector[state["idx"]] = (state["ramped_multipole"], field)
 
-        self.queue.advance()
+        self.queue.reset()
         yield self.setMultipoleValues(
             state["context"],
             vector,
@@ -612,13 +612,15 @@ class DACServer(LabradServer):
         if loop.running:
             loop.stop()
 
+        self.queue.clear()
+        self.queue.reset()
+
         if restore_center:
             vector = list(state["vector"])
             vector[state["idx"]] = (
                 state["ramped_multipole"],
                 state["center"]
             )
-            self.queue.advance()
             yield self.setMultipoleValues(c, vector, self.control.position)
 
     def initContext(self, c):
