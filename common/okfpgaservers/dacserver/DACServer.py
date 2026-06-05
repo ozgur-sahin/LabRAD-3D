@@ -21,6 +21,8 @@ import matplotlib.pyplot as plt
 import sys
 from labrad.server import LabradServer, setting, Signal, inlineCallbacks
 from twisted.internet.defer import returnValue
+from twisted.internet.task import LoopingCall
+import math
 from scipy import interpolate
 from scipy.interpolate import UnivariateSpline as UniSpline
 from numpy import genfromtxt, arange
@@ -206,6 +208,7 @@ class DACServer(LabradServer):
     onNewUpdate = Signal(SIGNALID, 'signal: ports updated', 's')
     queue = Queue()
     api = api()
+    multipole_oscillation = None
 
     registry_path = ['', 'Servers', hc.EXPNAME + SERVERNAME]
     dac_dict = dict(hc.elec_dict.items() + hc.sma_dict.items())
@@ -541,6 +544,83 @@ class DACServer(LabradServer):
     #         yield self.registry.cd(self.registry_path + [self.control.Cfile_name_comp], True)
     #         yield self.registry.set('center_voltage', center_voltage)
 
+    @setting(19, "Start Multipole Oscillation",
+         ramped_multipole='s', center='v', amplitude='v',
+         frequency='v', update_rate='v')
+    def start_multipole_oscillation(
+        self, c, ramped_multipole, center, amplitude,
+        frequency=1.0, update_rate=10.0):
+
+        if self.multipole_oscillation is not None:
+            raise Exception("Multipole oscillation already running")
+
+        vector = self.control.multipole_vector.items()
+        names = zip(*vector)[0]
+        idx = names.index(ramped_multipole)
+
+        state = {
+            "context": c,
+            "vector": vector,
+            "idx": idx,
+            "ramped_multipole": ramped_multipole,
+            "center": center,
+            "amplitude": amplitude,
+            "frequency": frequency,
+            "t0": time.time(),
+            "loop": None,
+        }
+
+        loop = LoopingCall(self._multipole_oscillation_step)
+        state["loop"] = loop
+        self.multipole_oscillation = state
+
+        loop.start(1.0 / update_rate, now=True)
+
+    @inlineCallbacks
+    def _multipole_oscillation_step(self):
+        state = self.multipole_oscillation
+        if state is None:
+            return
+
+        t = time.time() - state["t0"]
+
+        field = (
+            state["center"]
+            + state["amplitude"]
+            * math.sin(2.0 * math.pi * state["frequency"] * t)
+        )
+
+        vector = list(state["vector"])
+        vector[state["idx"]] = (state["ramped_multipole"], field)
+
+        self.queue.advance()
+        yield self.setMultipoleValues(
+            state["context"],
+            vector,
+            self.control.position
+        )
+ 
+    @setting(20, "Stop Multipole Oscillation", restore_center='b')
+    def stop_multipole_oscillation(self, c, restore_center=True):
+        if self.multipole_oscillation is None:
+            return
+
+        state = self.multipole_oscillation
+        self.multipole_oscillation = None
+
+        loop = state["loop"]
+        if loop.running:
+            loop.stop()
+
+        if restore_center:
+            vector = list(state["vector"])
+            vector[state["idx"]] = (
+                state["ramped_multipole"],
+                state["center"]
+            )
+            self.queue.advance()
+            yield self.setMultipoleValues(c, vector, self.control.position)
+
     def initContext(self, c):
         self.listeners.add(c.ID)
 
@@ -552,6 +632,7 @@ class DACServer(LabradServer):
         try: notified.remove(context.ID)
         except: pass
         self.onNewUpdate('Channels updated', notified)
+
 
 if __name__ == "__main__":
     from labrad import util
