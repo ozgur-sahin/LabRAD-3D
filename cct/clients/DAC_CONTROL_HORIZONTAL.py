@@ -25,9 +25,9 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.position = yield self.dacserver.get_position()
         self.controls = {k: QCustomSpinBox(k, (-5000.,5000.)) for k in self.multipoles}
         self.multipoleValues = {k: 0.0 for k in self.multipoles}
-        self.pLabel = QtGui.QLabel('H: ' + str(self.position))
-        self.pLabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
-        self.ctrlPosLayout.addWidget(self.pLabel)
+        # self.pLabel = QtGui.QLabel('H: ' + str(self.position))
+        # self.pLabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+        # self.ctrlPosLayout.addWidget(self.pLabel)
         # make ability to tune the ion trapping height
         # self.pSlider = QtGui.QSlider(QtCore.Qt.Vertical)
         # self.pSlider.setFixedHeight(250)
@@ -194,7 +194,7 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         for k in self.multipoles:
             self.multipoleValues[k] = round(self.controls[k].spinLevel.value(), 3)
         # self.position = self.position_vector[self.pSlider.value()]
-        self.pLabel.setText('H: ' + str(self.position))
+        # self.pLabel.setText('H: ' + str(self.position))
 
     def sendToServer(self):
         if self.inputUpdated:
@@ -255,7 +255,7 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         # change trapping position
         temp_position = yield self.dacserver.get_position(1)
         # self.pSlider.setValue(self.position_vector.index(str(temp_position)))
-        self.pLabel.setText('H: ' + str(temp_position))
+        # self.pLabel.setText('H: ' + str(temp_position))
         # change multipoles
         temp_multipoles = yield self.dacserver.get_multipole_values(1)
         for k, v in temp_multipoles:
@@ -273,7 +273,7 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         # change trapping position
         temp_position = yield self.dacserver.get_position(2)
         # self.pSlider.setValue(self.position_vector.index(str(temp_position)))
-        self.pLabel.setText('H: ' + str(temp_position))
+        # self.pLabel.setText('H: ' + str(temp_position))
         # change multipoles
         temp_multipoles = yield self.dacserver.get_multipole_values(2)
         for k, v in temp_multipoles:
