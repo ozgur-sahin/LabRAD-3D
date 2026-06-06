@@ -25,6 +25,9 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.position = yield self.dacserver.get_position()
         self.controls = {k: QCustomSpinBox(k, (-5000.,5000.)) for k in self.multipoles}
         self.multipoleValues = {k: 0.0 for k in self.multipoles}
+        self.pLabel = QtGui.QLabel('H: ' + str(self.position))
+        self.pLabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+        self.ctrlPosLayout.addWidget(self.pLabel)
         # make ability to tune the ion trapping height
         # self.pSlider = QtGui.QSlider(QtCore.Qt.Vertical)
         # self.pSlider.setFixedHeight(250)
@@ -77,8 +80,6 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.readMultipoleValues1 = QtGui.QPushButton('Read Memory Slot 1')
         self.writeMultipoleValues2 = QtGui.QPushButton('Write Memory Slot 2')
         self.readMultipoleValues2 = QtGui.QPushButton('Read Memory Slot 2')
-        self.MultipoleSweepStartButton = QtGui.QPushButton("Start Multipole Sweep")
-        self.MultipoleSweepStopButton = QtGui.QPushButton("Stop Multipole Sweep")
         self.ctrlPosButtonLayout.addWidget(self.multipoleFileSelectButton)
         self.ctrlPosButtonLayout.addWidget(self.displayAnalogVoltages)
         self.ctrlPosButtonLayout.addWidget(self.displayMultipoleValues)
@@ -87,8 +88,7 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.ctrlPosButtonLayout.addWidget(self.readMultipoleValues1)
         self.ctrlPosButtonLayout.addWidget(self.writeMultipoleValues2)
         self.ctrlPosButtonLayout.addWidget(self.readMultipoleValues2)
-        self.ctrlPosButtonLayout.addWidget(self.MultipoleSweepStartButton)
-        self.ctrlPosButtonLayout.addWidget(self.MultipoleSweepStopButton)
+        self.ctrlPosButtonLayout.addWidget(self.makeMultipoleSweepBox())
 
         # connect all the button controls
         for k in self.multipoles:
@@ -102,8 +102,6 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.readMultipoleValues1.released.connect(self.readMultipoles1)
         self.writeMultipoleValues2.released.connect(self.writeMultipoles2)
         self.readMultipoleValues2.released.connect(self.readMultipoles2)
-        self.MultipoleSweepStartButton.released.connect(self.startMultipoleSweep)
-        self.MultipoleSweepStopButton.released.connect(self.stopMultipoleSweep)
 
         self.ctrlLayout_full = QtGui.QGridLayout()
         self.ctrlLayout_full.addLayout(self.ctrlPosButtonLayout, 0, 0)
@@ -112,6 +110,68 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
             self.ctrlLayout_full.addLayout(self.ctrlLayout_extra, 0, 2)
         self.setLayout(self.ctrlLayout_full)
         yield self.followSignal(0, 0)   
+
+    def makeMultipoleSweepBox(self):
+        box = QtGui.QGroupBox('Multipole Sweep')
+        layout = QtGui.QGridLayout()
+
+        self.sweepMultipole = QtGui.QComboBox()
+        self.sweepMultipole.addItems(self.multipoles)
+
+        self.sweepCenter = QtGui.QDoubleSpinBox()
+        self.sweepCenter.setDecimals(4)
+        self.sweepCenter.setRange(-5000.0, 5000.0)
+        self.sweepCenter.setSingleStep(0.1)
+
+        self.sweepAmplitude = QtGui.QDoubleSpinBox()
+        self.sweepAmplitude.setDecimals(4)
+        self.sweepAmplitude.setRange(0.0, 5000.0)
+        self.sweepAmplitude.setSingleStep(0.1)
+        self.sweepAmplitude.setValue(0.5)
+
+        self.sweepFrequency = QtGui.QDoubleSpinBox()
+        self.sweepFrequency.setDecimals(3)
+        self.sweepFrequency.setRange(0.001, 100.0)
+        self.sweepFrequency.setSingleStep(0.1)
+        self.sweepFrequency.setValue(0.1)
+
+        self.sweepUpdateRate = QtGui.QDoubleSpinBox()
+        self.sweepUpdateRate.setDecimals(1)
+        self.sweepUpdateRate.setRange(0.1, 100.0)
+        self.sweepUpdateRate.setSingleStep(1.0)
+        self.sweepUpdateRate.setValue(5.0)
+
+        self.sweepRestoreCenter = QtGui.QCheckBox('Restore center on stop')
+        self.sweepRestoreCenter.setChecked(True)
+
+        self.sweepUseCurrentButton = QtGui.QPushButton('Use Current')
+        self.sweepStartButton = QtGui.QPushButton('Start')
+        self.sweepStopButton = QtGui.QPushButton('Stop')
+        self.sweepStopButton.setEnabled(False)
+        self.sweepStatus = QtGui.QLabel('Idle')
+
+        layout.addWidget(QtGui.QLabel('Multipole'), 0, 0)
+        layout.addWidget(self.sweepMultipole, 0, 1)
+        layout.addWidget(QtGui.QLabel('Center'), 1, 0)
+        layout.addWidget(self.sweepCenter, 1, 1)
+        layout.addWidget(QtGui.QLabel('Amplitude'), 2, 0)
+        layout.addWidget(self.sweepAmplitude, 2, 1)
+        layout.addWidget(QtGui.QLabel('Freq Hz'), 3, 0)
+        layout.addWidget(self.sweepFrequency, 3, 1)
+        layout.addWidget(QtGui.QLabel('Update Hz'), 4, 0)
+        layout.addWidget(self.sweepUpdateRate, 4, 1)
+        layout.addWidget(self.sweepRestoreCenter, 5, 0, 1, 2)
+        layout.addWidget(self.sweepUseCurrentButton, 6, 0, 1, 2)
+        layout.addWidget(self.sweepStartButton, 7, 0)
+        layout.addWidget(self.sweepStopButton, 7, 1)
+        layout.addWidget(self.sweepStatus, 8, 0, 1, 2)
+
+        self.sweepUseCurrentButton.released.connect(self.useCurrentSweepCenter)
+        self.sweepStartButton.released.connect(self.startMultipoleSweep)
+        self.sweepStopButton.released.connect(self.stopMultipoleSweep)
+
+        box.setLayout(layout)
+        return box
         
     @inlineCallbacks
     def connect(self):
@@ -225,11 +285,63 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         for k in self.multipoles:
             self.controls[k].spinLevel.setValue(0.0)
 
-    def startMultipoleSweep(self):
-        self.dacserver.start_multipole_oscillation("Ez", 0, 0.5, 0.05, 2.0)
+    def useCurrentSweepCenter(self):
+        multipole = str(self.sweepMultipole.currentText())
+        try:
+            center = self.controls[multipole].spinLevel.value()
+        except KeyError:
+            return
+        self.sweepCenter.setValue(center)
 
+    @inlineCallbacks
+    def startMultipoleSweep(self):
+        multipole = str(self.sweepMultipole.currentText())
+        center = float(self.sweepCenter.value())
+        amplitude = float(self.sweepAmplitude.value())
+        frequency = float(self.sweepFrequency.value())
+        update_rate = float(self.sweepUpdateRate.value())
+
+        self.sweepStartButton.setEnabled(False)
+        self.sweepStatus.setText('Starting...')
+        try:
+            yield self.dacserver.start_multipole_oscillation(
+                multipole, center, amplitude, frequency, update_rate
+            )
+        except Exception, e:
+            self.sweepStatus.setText('Start failed')
+            self.sweepStartButton.setEnabled(True)
+            msgBox = QtGui.QMessageBox(
+                QtGui.QMessageBox.Warning,
+                'Multipole Sweep',
+                str(e)
+            )
+            msgBox.exec_()
+            return
+
+        self.sweepStopButton.setEnabled(True)
+        self.sweepStatus.setText('Running: ' + multipole)
+
+    @inlineCallbacks
     def stopMultipoleSweep(self):
-        self.dacserver.stop_multipole_oscillation(True)
+        restore_center = bool(self.sweepRestoreCenter.isChecked())
+
+        self.sweepStopButton.setEnabled(False)
+        self.sweepStatus.setText('Stopping...')
+        try:
+            yield self.dacserver.stop_multipole_oscillation(restore_center)
+        except Exception, e:
+            self.sweepStatus.setText('Stop failed')
+            self.sweepStopButton.setEnabled(True)
+            msgBox = QtGui.QMessageBox(
+                QtGui.QMessageBox.Warning,
+                'Multipole Sweep',
+                str(e)
+            )
+            msgBox.exec_()
+            return
+
+        self.sweepStartButton.setEnabled(True)
+        self.sweepStatus.setText('Idle')
         
     @inlineCallbacks    
     def setupListeners(self):
