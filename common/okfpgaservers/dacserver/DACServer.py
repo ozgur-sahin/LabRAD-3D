@@ -553,6 +553,8 @@ class DACServer(LabradServer):
 
         if self.multipole_oscillation is not None:
             raise Exception("Multipole oscillation already running")
+        
+        self.multipole_vector_before_sweep = self.getMultipoleValues()
 
         vector = self.control.multipole_vector.items()
         names = zip(*vector)[0]
@@ -600,7 +602,7 @@ class DACServer(LabradServer):
             self.control.position
         )
  
-    @setting(20, "Stop Multipole Oscillation", restore_center='b')
+    @setting(20, "Stop Multipole Oscillation", restore_center='b', )
     def stop_multipole_oscillation(self, c, restore_center=True):
         if self.multipole_oscillation is None:
             return
@@ -621,7 +623,7 @@ class DACServer(LabradServer):
                 state["ramped_multipole"],
                 state["center"]
             )
-            yield self.setMultipoleValues(c, vector, self.control.position)
+            yield self.setMultipoleValues(c, self.multipole_vector_before_sweep, self.control.position)
 
     def initContext(self, c):
         self.listeners.add(c.ID)
