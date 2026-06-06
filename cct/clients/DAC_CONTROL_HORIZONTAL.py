@@ -117,6 +117,7 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
 
         self.sweepMultipole = QtGui.QComboBox()
         self.sweepMultipole.addItems(self.multipoles)
+        self.setDefaultSweepMultipole('Ez')
 
         self.sweepCenter = QtGui.QDoubleSpinBox()
         self.sweepCenter.setDecimals(4)
@@ -172,6 +173,11 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
 
         box.setLayout(layout)
         return box
+    
+    def setDefaultSweepMultipole(self, multipole):
+        index = self.sweepMultipole.findText(multipole)
+        if index >= 0:
+            self.sweepMultipole.setCurrentIndex(index)
         
     @inlineCallbacks
     def connect(self):

@@ -554,7 +554,7 @@ class DACServer(LabradServer):
         if self.multipole_oscillation is not None:
             raise Exception("Multipole oscillation already running")
         
-        self.multipole_vector_before_sweep = self.getMultipoleValues()
+        self.multipole_vector_before_sweep = self.getMultipoleValues(c)
 
         vector = self.control.multipole_vector.items()
         names = zip(*vector)[0]
