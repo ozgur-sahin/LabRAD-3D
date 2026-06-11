@@ -87,7 +87,9 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.ctrlPosButtonLayout.addWidget(self.writeMultipoleValues1)
         self.ctrlPosButtonLayout.addWidget(self.readMultipoleValues1)
         self.ctrlPosButtonLayout.addWidget(self.writeMultipoleValues2)
-        self.ctrlPosButtonLayout.addWidget(self.readMultipoleValues2)
+        self.ctrlPosButtonLayout.addWidget(self.readMultipoleValues2)\
+
+        self.multipole_oscillation_state = yield self.dacserver.get_multipole_oscillation_state()
         self.ctrlPosButtonLayout.addWidget(self.makeMultipoleSweepBox())
 
         # connect all the button controls
@@ -148,7 +150,8 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.sweepUseCurrentButton = QtGui.QPushButton('Use Current')
         self.sweepStartButton = QtGui.QPushButton('Start')
         self.sweepStopButton = QtGui.QPushButton('Stop')
-        self.sweepStopButton.setEnabled(False)
+        self.sweepStartButton.setEnabled(self.multipole_oscillation_state)
+        self.sweepStopButton.setEnabled(not self.multipole_oscillation_state)
         self.sweepStatus = QtGui.QLabel('Idle')
 
         layout.addWidget(QtGui.QLabel('Multipole'), 0, 0)
@@ -541,7 +544,7 @@ class CHANNEL_MONITOR(QtGui.QWidget):
         for (k, v) in av:
             # print k
             # print v
-            self.displays[k].display(float(v)) 
+            self.displays[k].display("%.3f" % float(v)) 
             if abs(v) > 30:
                 self.displays[k].setStyleSheet("QWidget {background-color: orange }")
             else:

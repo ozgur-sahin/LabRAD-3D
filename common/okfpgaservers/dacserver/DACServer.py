@@ -625,6 +625,10 @@ class DACServer(LabradServer):
             )
             yield self.setMultipoleValues(c, self.multipole_vector_before_sweep, self.control.position)
 
+    @setting(21, "Get Multipole Oscillation State", returns='b')
+    def GetMultipoleOscillationState(self, c):
+        return self.multipole_oscillation is None
+
     def initContext(self, c):
         self.listeners.add(c.ID)
 
