@@ -592,7 +592,8 @@ class DACServer(LabradServer):
             * math.sin(2.0 * math.pi * state["frequency"] * t)
         )
 
-        vector = list(state["vector"])
+        # vector = list(state["vector"])
+        vector=list(self.control.multipole_vector.items())
         vector[state["idx"]] = (state["ramped_multipole"], field)
 
         self.queue.reset()
@@ -601,6 +602,7 @@ class DACServer(LabradServer):
             vector,
             self.control.position
         )
+        self.notifyAllListeners(state["context"])
  
     @setting(20, "Stop Multipole Oscillation", restore_center='b', )
     def stop_multipole_oscillation(self, c, restore_center=True):
@@ -624,11 +626,12 @@ class DACServer(LabradServer):
                 state["center"]
             )
             yield self.setMultipoleValues(c, self.multipole_vector_before_sweep, self.control.position)
+            self.notifyAllListeners(c)
 
     @setting(21, "Get Multipole Oscillation State", returns='b')
     def GetMultipoleOscillationState(self, c):
         return self.multipole_oscillation is None
-
+    
     def initContext(self, c):
         self.listeners.add(c.ID)
 
@@ -639,6 +642,10 @@ class DACServer(LabradServer):
         notified = self.listeners.copy()
         try: notified.remove(context.ID)
         except: pass
+        self.onNewUpdate('Channels updated', notified)
+
+    def notifyAllListeners(self, context):
+        notified = self.listeners.copy()
         self.onNewUpdate('Channels updated', notified)
 
 

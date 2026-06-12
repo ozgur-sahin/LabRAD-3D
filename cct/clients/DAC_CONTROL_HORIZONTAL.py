@@ -87,7 +87,7 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.ctrlPosButtonLayout.addWidget(self.writeMultipoleValues1)
         self.ctrlPosButtonLayout.addWidget(self.readMultipoleValues1)
         self.ctrlPosButtonLayout.addWidget(self.writeMultipoleValues2)
-        self.ctrlPosButtonLayout.addWidget(self.readMultipoleValues2)\
+        self.ctrlPosButtonLayout.addWidget(self.readMultipoleValues2)
 
         self.multipole_oscillation_state = yield self.dacserver.get_multipole_oscillation_state()
         self.ctrlPosButtonLayout.addWidget(self.makeMultipoleSweepBox())
@@ -123,29 +123,29 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
 
         self.sweepCenter = QtGui.QDoubleSpinBox()
         self.sweepCenter.setDecimals(4)
-        self.sweepCenter.setRange(-5000.0, 5000.0)
-        self.sweepCenter.setSingleStep(0.1)
+        self.sweepCenter.setRange(-1.0, 1.0)
+        self.sweepCenter.setSingleStep(0.01)
 
         self.sweepAmplitude = QtGui.QDoubleSpinBox()
         self.sweepAmplitude.setDecimals(4)
-        self.sweepAmplitude.setRange(0.0, 5000.0)
-        self.sweepAmplitude.setSingleStep(0.1)
+        self.sweepAmplitude.setRange(0.0, 1.5)
+        self.sweepAmplitude.setSingleStep(0.01)
         self.sweepAmplitude.setValue(0.5)
 
         self.sweepFrequency = QtGui.QDoubleSpinBox()
         self.sweepFrequency.setDecimals(3)
-        self.sweepFrequency.setRange(0.001, 100.0)
-        self.sweepFrequency.setSingleStep(0.1)
-        self.sweepFrequency.setValue(0.1)
+        self.sweepFrequency.setRange(0.01, 100.0)
+        self.sweepFrequency.setSingleStep(0.01)
+        self.sweepFrequency.setValue(0.01)
 
         self.sweepUpdateRate = QtGui.QDoubleSpinBox()
         self.sweepUpdateRate.setDecimals(1)
-        self.sweepUpdateRate.setRange(0.1, 100.0)
-        self.sweepUpdateRate.setSingleStep(1.0)
+        self.sweepUpdateRate.setRange(0.1, 5.0)
+        self.sweepUpdateRate.setSingleStep(0.1)
         self.sweepUpdateRate.setValue(5.0)
 
         self.sweepRestoreCenter = QtGui.QCheckBox('Restore center on stop')
-        self.sweepRestoreCenter.setChecked(True)
+        self.sweepRestoreCenter.setChecked(False)
 
         self.sweepUseCurrentButton = QtGui.QPushButton('Use Current')
         self.sweepStartButton = QtGui.QPushButton('Start')
@@ -361,6 +361,7 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
     def followSignal(self, x, s):
         if self.updating: return
         multipoles = yield self.dacserver.get_multipole_values()
+        # print 'followSignal called'
         for (k,v) in multipoles:
             self.controls[k].setValueNoSignal(v)
         pos = yield self.dacserver.get_position()
@@ -467,7 +468,7 @@ class CHANNEL_MONITOR(QtGui.QWidget):
     def makeGUI(self):      
         self.dacDict = dict(hc.elec_dict.items() + hc.sma_dict.items())
         self.displays = {k: QtGui.QLCDNumber() for k in self.dacDict.keys()}
-        print self.displays
+        # print self.displays
         layout = QtGui.QGridLayout()
         if bool(hc.sma_dict):
             smaBox = QtGui.QGroupBox('SMA Out')
@@ -497,7 +498,7 @@ class CHANNEL_MONITOR(QtGui.QWidget):
 
         elecList = hc.elec_dict.keys()
         elecList.sort()
-        print 'Eleclist: ', elecList
+        # print 'Eleclist: ', elecList
         if bool(hc.centerElectrode):
             elecList.pop(hc.centerElectrode-1)
         for i,e in enumerate(elecList):
@@ -506,7 +507,7 @@ class CHANNEL_MONITOR(QtGui.QWidget):
             if int(i) <= 25:
                 elecLayout.addWidget(QtGui.QLabel(e), trapElecLayout[int(i)][0], trapElecLayout[int(i)][1])
                 elecLayout.addWidget(self.displays[e], trapElecLayout[int(i)][0], trapElecLayout[int(i)][1]+1)
-                print i, e, self.displays[e]
+                # print i, e, self.displays[e]
         if bool(hc.centerElectrode):
             elecLayout.addWidget(QtGui.QLabel('Center'), 4, 4)
             elecLayout.addWidget(self.displays[str(hc.centerElectrode).zfill(2)], 4, 5, 1, 1)      
@@ -538,7 +539,7 @@ class CHANNEL_MONITOR(QtGui.QWidget):
     @inlineCallbacks
     def followSignal(self, x, s):        
         av = yield self.dacserver.get_analog_voltages()
-        print av
+        # print av
         brightness = 210
         darkness = 255 - brightness           
         for (k, v) in av:
