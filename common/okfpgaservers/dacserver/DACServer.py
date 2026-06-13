@@ -209,6 +209,7 @@ class DACServer(LabradServer):
     queue = Queue()
     api = api()
     multipole_oscillation = None
+    multipole_step = None
 
     registry_path = ['', 'Servers', hc.EXPNAME + SERVERNAME]
     dac_dict = dict(hc.elec_dict.items() + hc.sma_dict.items())
@@ -632,6 +633,127 @@ class DACServer(LabradServer):
     def GetMultipoleOscillationState(self, c):
         return self.multipole_oscillation is None
     
+    @setting(22, "Start Multipole Step",
+         ramped_multipole='s', center='v', amplitude='v',
+         period='v', update_time='v')
+    def start_multipole_step(
+        self, c, ramped_multipole, center, amplitude,
+        period=100.0, update_time=5.0):
+
+        print "Starting Multipole Step"
+
+        if self.multipole_step is not None:
+            raise Exception("Multipole step already running")
+        
+        self.multipole_vector_before_step = self.getMultipoleValues(c)
+
+        print "Received multipole values: ", self.multipole_vector_before_step
+
+        vector = self.control.multipole_vector.items()
+        names = zip(*vector)[0]
+        idx = names.index(ramped_multipole)
+
+        state = {
+            "context": c,
+            "vector": vector,
+            "idx": idx,
+            "ramped_multipole": ramped_multipole,
+            "center": center,
+            "amplitude": amplitude,
+            "period": period,
+            "t0": time.time(),
+            "loop": None,
+        }
+
+        loop = LoopingCall(self._multipole_loop_step)
+        state["loop"] = loop
+        self.multipole_step = state
+
+        print "Looping call initialized"
+        print "state: ", state
+
+        loop.start(update_time, now=True)
+
+        print "Looping call started"
+
+    def _triangle_wave(self, t, amplitude, period, center):
+        print "Entered triangle wave function"
+        try:
+            t = np.asarray(t, dtype = float)
+            print t
+            period = float(period)
+            amplitude = float(amplitude)
+        except:
+            raise Exception("Error in triangle wave")
+        print "Triangle wave values initialized"
+        x = (t / period + 0.75) % 1.0
+        print x
+        return amplitude * (4.0 * np.abs(x - 0.5) - 1) + center
+
+    @inlineCallbacks
+    def _multipole_loop_step(self):
+        state = self.multipole_step
+        print "Step started"
+        if state is None:
+            return
+
+        try: 
+            t = time.time() - state["t0"]
+        except Exception, e:
+            raise Exception(e)
+
+        print "Time calculated"
+        try:
+            field = self._triangle_wave(t, state["amplitude"], state["period"], state["center"])
+        except Exception, e:
+            raise Exception("Error in triangle wave generation: " + e)
+        print "evaluated triangle wave"
+        # vector = list(state["vector"])
+        vector=list(self.control.multipole_vector.items())
+        vector[state["idx"]] = (state["ramped_multipole"], field)
+
+        print "Vector: ", vector
+
+        self.queue.reset()
+        yield self.setMultipoleValues(
+            state["context"],
+            vector,
+            self.control.position
+        )
+        print "Sent multipole values"
+        self.notifyAllListeners(state["context"])
+        print "Voltages updated"
+
+    @setting(23, "Stop Multipole Step", restore_center='b', )
+    def stop_multipole_step(self, c, restore_center=True):
+        if self.multipole_step is None:
+            return
+
+        state = self.multipole_step
+        self.multipole_step = None
+
+        loop = state["loop"]
+        if loop.running:
+            loop.stop()
+            print "Loop stopped"
+
+        self.queue.clear()
+        self.queue.reset()
+
+        if restore_center:
+            vector = list(state["vector"])
+            vector[state["idx"]] = (
+                state["ramped_multipole"],
+                state["center"]
+            )
+            yield self.setMultipoleValues(c, self.multipole_vector_before_step, self.control.position)
+            self.notifyAllListeners(c)
+
+    @setting(24, "Get Multipole Step State", returns='b')
+    def GetMultipoleOscillationState(self, c):
+        return self.multipole_step is None
+
+    
     def initContext(self, c):
         self.listeners.add(c.ID)
 
@@ -647,6 +769,14 @@ class DACServer(LabradServer):
     def notifyAllListeners(self, context):
         notified = self.listeners.copy()
         self.onNewUpdate('Channels updated', notified)
+
+    def stopServer(self):
+        print "Stopping DAC Server"
+        if self.multipole_oscillation is not None:
+            self.stop_multipole_oscillation(self.multipole_oscillation["context"])
+            print "Turned off multipole oscillation"
+
+        # if self.api
 
 
 if __name__ == "__main__":

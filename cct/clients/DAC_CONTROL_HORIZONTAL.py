@@ -97,8 +97,10 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
             self.controls[k].onNewValues.connect(self.inputHasUpdated)
         # self.pSlider.valueChanged.connect(self.inputHasUpdated)
         self.multipoleFileSelectButton.released.connect(self.selectCFile)
-        self.displayAnalogVoltages.released.connect(self.displayVoltages)
-        self.displayMultipoleValues.released.connect(self.displayMultipoles)
+        # self.displayAnalogVoltages.released.connect(self.displayVoltages)
+        # self.displayMultipoleValues.released.connect(self.displayMultipoles)
+        self.displayAnalogVoltages.released.connect(self.startMultipoleStep)
+        self.displayMultipoleValues.released.connect(self.stopMultipoleStep)
         self.zeroMultipoleValues.released.connect(self.zeroMultipoles)
         self.writeMultipoleValues1.released.connect(self.writeMultipoles1)
         self.readMultipoleValues1.released.connect(self.readMultipoles1)
@@ -351,6 +353,65 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
 
         self.sweepStartButton.setEnabled(True)
         self.sweepStatus.setText('Idle')
+
+    @inlineCallbacks
+    def startMultipoleStep(self):
+        # multipole = str(self.sweepMultipole.currentText())
+        # center = float(self.sweepCenter.value())
+        # amplitude = float(self.sweepAmplitude.value())
+        # frequency = float(self.sweepFrequency.value())
+        # update_rate = float(self.sweepUpdateRate.value())
+
+        multipole = 'Ez'
+        center = 0.0
+        amplitude = 0.2
+        period = 10.0
+        update_time = 0.25
+
+        # self.sweepStartButton.setEnabled(False)
+        # self.sweepStatus.setText('Starting...')
+        try:
+            yield self.dacserver.start_multipole_step(
+                multipole, center, amplitude, period, update_time
+            )
+            print "started multipole step"
+        except Exception, e:
+            # self.sweepStatus.setText('Start failed')
+            # self.sweepStartButton.setEnabled(True)
+            # msgBox = QtGui.QMessageBox(
+            #     QtGui.QMessageBox.Warning,
+            #     'Multipole Sweep',
+            #     str(e)
+            # )
+            # msgBox.exec_()
+            print "error starting multipole step: ", e
+            return
+
+        # self.sweepStopButton.setEnabled(True)
+        # self.sweepStatus.setText('Running: ' + multipole)
+
+    @inlineCallbacks
+    def stopMultipoleStep(self):
+        # restore_center = bool(self.sweepRestoreCenter.isChecked())
+        restore_center = True
+
+        # self.sweepStopButton.setEnabled(False)
+        # self.sweepStatus.setText('Stopping...')
+        try:
+            yield self.dacserver.stop_multipole_step(restore_center)
+        except Exception, e:
+            # self.sweepStatus.setText('Stop failed')
+            # self.sweepStopButton.setEnabled(True)
+            # msgBox = QtGui.QMessageBox(
+            #     QtGui.QMessageBox.Warning,
+            #     'Multipole Sweep',
+            #     str(e)
+            # )
+            # msgBox.exec_()
+            return
+
+        # self.sweepStartButton.setEnabled(True)
+        # self.sweepStatus.setText('Idle')
         
     @inlineCallbacks    
     def setupListeners(self):
