@@ -90,17 +90,27 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.ctrlPosButtonLayout.addWidget(self.readMultipoleValues2)
 
         self.multipole_oscillation_state = yield self.dacserver.get_multipole_oscillation_state()
-        self.ctrlPosButtonLayout.addWidget(self.makeMultipoleSweepBox())
+        self.multipole_step_state = yield self.dacserver.get_multipole_step_state()
+
+        self.SweepTabWidget = QtGui.QTabWidget()
+
+        self.MultipoleSweepWidget = self.makeMultipoleSweepBox()
+        self.MultipoleStepWidget = self.makeMultipoleStepBox()
+
+        self.SweepTabWidget.addTab(self.MultipoleStepWidget, "&Step")
+        self.SweepTabWidget.addTab(self.MultipoleSweepWidget, "&Sweep")
+        
+        self.ctrlPosButtonLayout.addWidget(self.SweepTabWidget)
 
         # connect all the button controls
         for k in self.multipoles:
             self.controls[k].onNewValues.connect(self.inputHasUpdated)
         # self.pSlider.valueChanged.connect(self.inputHasUpdated)
         self.multipoleFileSelectButton.released.connect(self.selectCFile)
-        # self.displayAnalogVoltages.released.connect(self.displayVoltages)
-        # self.displayMultipoleValues.released.connect(self.displayMultipoles)
-        self.displayAnalogVoltages.released.connect(self.startMultipoleStep)
-        self.displayMultipoleValues.released.connect(self.stopMultipoleStep)
+        self.displayAnalogVoltages.released.connect(self.displayVoltages)
+        self.displayMultipoleValues.released.connect(self.displayMultipoles)
+        # self.displayAnalogVoltages.released.connect(self.startMultipoleStep)
+        # self.displayMultipoleValues.released.connect(self.stopMultipoleStep)
         self.zeroMultipoleValues.released.connect(self.zeroMultipoles)
         self.writeMultipoleValues1.released.connect(self.writeMultipoles1)
         self.readMultipoleValues1.released.connect(self.readMultipoles1)
@@ -179,10 +189,79 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         box.setLayout(layout)
         return box
     
+    def makeMultipoleStepBox(self):
+        box = QtGui.QGroupBox('Multipole Step')
+        layout = QtGui.QGridLayout()
+
+        self.stepMultipole = QtGui.QComboBox()
+        self.stepMultipole.addItems(self.multipoles)
+        self.setDefaultStepMultipole('Ez')
+
+        self.stepCenter = QtGui.QDoubleSpinBox()
+        self.stepCenter.setDecimals(4)
+        self.stepCenter.setRange(-1.0, 1.0)
+        self.stepCenter.setSingleStep(0.01)
+
+        self.stepAmplitude = QtGui.QDoubleSpinBox()
+        self.stepAmplitude.setDecimals(4)
+        self.stepAmplitude.setRange(0.0, 1.5)
+        self.stepAmplitude.setSingleStep(0.01)
+        self.stepAmplitude.setValue(0.5)
+
+        self.stepPeriod = QtGui.QDoubleSpinBox()
+        self.stepPeriod.setDecimals(3)
+        self.stepPeriod.setRange(1.0, 500.0)
+        self.stepPeriod.setSingleStep(0.1)
+        self.stepPeriod.setValue(100.0)
+
+        self.stepUpdateTime = QtGui.QDoubleSpinBox()
+        self.stepUpdateTime.setDecimals(1)
+        self.stepUpdateTime.setRange(0.25, 20.0)
+        self.stepUpdateTime.setSingleStep(0.1)
+        self.stepUpdateTime.setValue(1.0)
+
+        self.stepRestoreCenter = QtGui.QCheckBox('Restore center on stop')
+        self.stepRestoreCenter.setChecked(False)
+
+        self.stepUseCurrentButton = QtGui.QPushButton('Use Current')
+        self.stepStartButton = QtGui.QPushButton('Start')
+        self.stepStopButton = QtGui.QPushButton('Stop')
+        self.stepStartButton.setEnabled(self.multipole_step_state)
+        self.stepStopButton.setEnabled(not self.multipole_step_state)
+        self.stepStatus = QtGui.QLabel('Idle')
+
+        layout.addWidget(QtGui.QLabel('Multipole'), 0, 0)
+        layout.addWidget(self.stepMultipole, 0, 1)
+        layout.addWidget(QtGui.QLabel('Center'), 1, 0)
+        layout.addWidget(self.stepCenter, 1, 1)
+        layout.addWidget(QtGui.QLabel('Amplitude'), 2, 0)
+        layout.addWidget(self.stepAmplitude, 2, 1)
+        layout.addWidget(QtGui.QLabel('Cycle Period'), 3, 0)
+        layout.addWidget(self.stepPeriod, 3, 1)
+        layout.addWidget(QtGui.QLabel('Update Time'), 4, 0)
+        layout.addWidget(self.stepUpdateTime, 4, 1)
+        layout.addWidget(self.stepRestoreCenter, 5, 0, 1, 2)
+        layout.addWidget(self.stepUseCurrentButton, 6, 0, 1, 2)
+        layout.addWidget(self.stepStartButton, 7, 0)
+        layout.addWidget(self.stepStopButton, 7, 1)
+        layout.addWidget(self.stepStatus, 8, 0, 1, 2)
+
+        self.stepUseCurrentButton.released.connect(self.useCurrentStepCenter)
+        self.stepStartButton.released.connect(self.startMultipoleStep)
+        self.stepStopButton.released.connect(self.stopMultipoleStep)
+
+        box.setLayout(layout)
+        return box
+    
     def setDefaultSweepMultipole(self, multipole):
         index = self.sweepMultipole.findText(multipole)
         if index >= 0:
             self.sweepMultipole.setCurrentIndex(index)
+
+    def setDefaultStepMultipole(self, multipole):
+        index = self.stepMultipole.findText(multipole)
+        if index >= 0:
+            self.stepMultipole.setCurrentIndex(index)
         
     @inlineCallbacks
     def connect(self):
@@ -304,6 +383,14 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
             return
         self.sweepCenter.setValue(center)
 
+    def useCurrentStepCenter(self):
+        multipole = str(self.stepMultipole.currentText())
+        try:
+            center = self.controls[multipole].spinLevel.value()
+        except KeyError:
+            return
+        self.stepCenter.setValue(center)
+
     @inlineCallbacks
     def startMultipoleSweep(self):
         multipole = str(self.sweepMultipole.currentText())
@@ -356,62 +443,55 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
 
     @inlineCallbacks
     def startMultipoleStep(self):
-        # multipole = str(self.sweepMultipole.currentText())
-        # center = float(self.sweepCenter.value())
-        # amplitude = float(self.sweepAmplitude.value())
-        # frequency = float(self.sweepFrequency.value())
-        # update_rate = float(self.sweepUpdateRate.value())
+        multipole = str(self.stepMultipole.currentText())
+        center = float(self.stepCenter.value())
+        amplitude = float(self.stepAmplitude.value())
+        period = float(self.stepPeriod.value())
+        update_time = float(self.stepUpdateTime.value())
 
-        multipole = 'Ez'
-        center = 0.0
-        amplitude = 0.2
-        period = 10.0
-        update_time = 0.25
-
-        # self.sweepStartButton.setEnabled(False)
-        # self.sweepStatus.setText('Starting...')
+        self.stepStartButton.setEnabled(False)
+        self.stepStatus.setText('Starting...')
         try:
             yield self.dacserver.start_multipole_step(
                 multipole, center, amplitude, period, update_time
             )
             print "started multipole step"
         except Exception, e:
-            # self.sweepStatus.setText('Start failed')
-            # self.sweepStartButton.setEnabled(True)
-            # msgBox = QtGui.QMessageBox(
-            #     QtGui.QMessageBox.Warning,
-            #     'Multipole Sweep',
-            #     str(e)
-            # )
-            # msgBox.exec_()
-            print "error starting multipole step: ", e
+            self.stepStatus.setText('Start failed')
+            self.stepStartButton.setEnabled(True)
+            msgBox = QtGui.QMessageBox(
+                QtGui.QMessageBox.Warning,
+                'Multipole Step',
+                str(e)
+            )
+            msgBox.exec_()
+            # print "error starting multipole step: ", e
             return
 
-        # self.sweepStopButton.setEnabled(True)
-        # self.sweepStatus.setText('Running: ' + multipole)
+        self.stepStopButton.setEnabled(True)
+        self.stepStatus.setText('Running: ' + multipole)
 
     @inlineCallbacks
     def stopMultipoleStep(self):
-        # restore_center = bool(self.sweepRestoreCenter.isChecked())
-        restore_center = True
+        restore_center = bool(self.stepRestoreCenter.isChecked())
 
-        # self.sweepStopButton.setEnabled(False)
-        # self.sweepStatus.setText('Stopping...')
+        self.stepStopButton.setEnabled(False)
+        self.stepStatus.setText('Stopping...')
         try:
             yield self.dacserver.stop_multipole_step(restore_center)
         except Exception, e:
-            # self.sweepStatus.setText('Stop failed')
-            # self.sweepStopButton.setEnabled(True)
-            # msgBox = QtGui.QMessageBox(
-            #     QtGui.QMessageBox.Warning,
-            #     'Multipole Sweep',
-            #     str(e)
-            # )
-            # msgBox.exec_()
+            self.stepStatus.setText('Stop failed')
+            self.stepStopButton.setEnabled(True)
+            msgBox = QtGui.QMessageBox(
+                QtGui.QMessageBox.Warning,
+                'Multipole Step',
+                str(e)
+            )
+            msgBox.exec_()
             return
 
-        # self.sweepStartButton.setEnabled(True)
-        # self.sweepStatus.setText('Idle')
+        self.stepStartButton.setEnabled(True)
+        self.stepStatus.setText('Idle')
         
     @inlineCallbacks    
     def setupListeners(self):

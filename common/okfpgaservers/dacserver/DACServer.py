@@ -750,7 +750,7 @@ class DACServer(LabradServer):
             self.notifyAllListeners(c)
 
     @setting(24, "Get Multipole Step State", returns='b')
-    def GetMultipoleOscillationState(self, c):
+    def GetMultipoleStepState(self, c):
         return self.multipole_step is None
 
     
