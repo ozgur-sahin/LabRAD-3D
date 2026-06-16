@@ -96,9 +96,11 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
 
         self.MultipoleSweepWidget = self.makeMultipoleSweepBox()
         self.MultipoleStepWidget = self.makeMultipoleStepBox()
+        self.MultipleMultipoleSweepWidget=self.makeMultipleMultipoleSweepBox(3)
 
         self.SweepTabWidget.addTab(self.MultipoleStepWidget, "&Step")
         self.SweepTabWidget.addTab(self.MultipoleSweepWidget, "&Sweep")
+        self.SweepTabWidget.addTab(self.MultipleMultipoleSweepWidget, '&Multiple Sweep')
         
         self.ctrlPosButtonLayout.addWidget(self.SweepTabWidget)
 
@@ -107,10 +109,10 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
             self.controls[k].onNewValues.connect(self.inputHasUpdated)
         # self.pSlider.valueChanged.connect(self.inputHasUpdated)
         self.multipoleFileSelectButton.released.connect(self.selectCFile)
-        # self.displayAnalogVoltages.released.connect(self.displayVoltages)
-        # self.displayMultipoleValues.released.connect(self.displayMultipoles)
-        self.displayAnalogVoltages.released.connect(self.startMultiSweep)
-        self.displayMultipoleValues.released.connect(self.StopMultiSweep)
+        self.displayAnalogVoltages.released.connect(self.displayVoltages)
+        self.displayMultipoleValues.released.connect(self.displayMultipoles)
+        # self.displayAnalogVoltages.released.connect(self.startMultiSweep)
+        # self.displayMultipoleValues.released.connect(self.StopMultiSweep)
         self.zeroMultipoleValues.released.connect(self.zeroMultipoles)
         self.writeMultipoleValues1.released.connect(self.writeMultipoles1)
         self.readMultipoleValues1.released.connect(self.readMultipoles1)
@@ -249,6 +251,22 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.stepUseCurrentButton.released.connect(self.useCurrentStepCenter)
         self.stepStartButton.released.connect(self.startMultipoleStep)
         self.stepStopButton.released.connect(self.stopMultipoleStep)
+
+        box.setLayout(layout)
+        return box
+    
+    def makeMultipleMultipoleSweepBox(self, n=3):
+        '''n is the number of swept multipoles'''
+        box = QtGui.QGroupBox('Multiple Multipole Sweep')
+        layout = QtGui.QGridLayout()
+        self.MultipoleSweepBoxes = [None]*n
+        
+        for i in range(n):
+            self.multipoleboxes[i]=QtGui.QComboBox()
+            self.multipoleboxes[i].addItems(self.multipoles)
+            layout.addWidget(QtGui.QLabel("Multipole "+str(i)), i, 0)
+            layout.addWidget(self.multipoleboxes[i], i, 1)
+
 
         box.setLayout(layout)
         return box
@@ -495,7 +513,7 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
 
     @inlineCallbacks
     def startMultiSweep(self):
-        sweep_names=('Ex', 'Ey', 'Ez')
+        sweep_names=('Ez', 'Ey', 'Ex')
         sweep_limits=[
             [0.0, 1.0, 0.5],
             [0.0, 0.4, 0.2],

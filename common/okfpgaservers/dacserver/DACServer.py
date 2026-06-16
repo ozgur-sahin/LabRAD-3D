@@ -791,11 +791,16 @@ class DACServer(LabradServer):
         dict_current_values=dict(current_values)
         # print self.multipole_sweep_values.items()
 
-        for (name, values), idx in zip(self.multipole_sweep_values.items(),
-                                     state['indices']
-                                       ):
-            print name, values, idx
-            dict_current_values[name]=values[idx]
+        for dim, name in enumerate(self.sweep_state["sweepnames"]):
+            reverse=sum(state['indices'][dim+1:])%2
+            idx=state['indices'][dim]
+            print "reverse=", bool(reverse)
+            if reverse:
+                idx=len(self.multipole_sweep_values[name])-1-idx
+            print name, self.multipole_sweep_values[name], idx
+            dict_current_values[name]=self.multipole_sweep_values[name][idx]
+
+
         current_values=dict_current_values.items()
         print "Multipole values: ", current_values
 
@@ -815,12 +820,12 @@ class DACServer(LabradServer):
 
     def _advance_indices(self):
         indices=self.sweep_state['indices']
-        sweeps=self.multipole_sweep_values.items()
+        multipole_names=self.sweep_state["sweepnames"]
 
-        for i in reversed(range(len(indices))):
+        for i in range(len(indices)):
             indices[i]+=1
 
-            if indices[i] < len(sweeps[i][1]):
+            if indices[i] < len(self.multipole_sweep_values[multipole_names[i]]):
                 return False
             
             indices[i]=0
