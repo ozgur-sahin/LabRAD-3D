@@ -107,10 +107,10 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
             self.controls[k].onNewValues.connect(self.inputHasUpdated)
         # self.pSlider.valueChanged.connect(self.inputHasUpdated)
         self.multipoleFileSelectButton.released.connect(self.selectCFile)
-        self.displayAnalogVoltages.released.connect(self.displayVoltages)
-        self.displayMultipoleValues.released.connect(self.displayMultipoles)
-        # self.displayAnalogVoltages.released.connect(self.startMultipoleStep)
-        # self.displayMultipoleValues.released.connect(self.stopMultipoleStep)
+        # self.displayAnalogVoltages.released.connect(self.displayVoltages)
+        # self.displayMultipoleValues.released.connect(self.displayMultipoles)
+        self.displayAnalogVoltages.released.connect(self.startMultiSweep)
+        self.displayMultipoleValues.released.connect(self.StopMultiSweep)
         self.zeroMultipoleValues.released.connect(self.zeroMultipoles)
         self.writeMultipoleValues1.released.connect(self.writeMultipoles1)
         self.readMultipoleValues1.released.connect(self.readMultipoles1)
@@ -492,6 +492,23 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
 
         self.stepStartButton.setEnabled(True)
         self.stepStatus.setText('Idle')
+
+    @inlineCallbacks
+    def startMultiSweep(self):
+        sweep_names=('Ex', 'Ey', 'Ez')
+        sweep_limits=[
+            [0.0, 1.0, 0.5],
+            [0.0, 0.4, 0.2],
+            [-1.0, 1.0, 0.5],
+        ]
+        
+        yield self.dacserver.start_multi_sweep(sweep_names, sweep_limits, 1.0, False, True)
+
+    @inlineCallbacks
+    def StopMultiSweep(self):
+        yield self.dacserver.stop_multi_sweep()
+        
+
         
     @inlineCallbacks    
     def setupListeners(self):

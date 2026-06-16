@@ -753,6 +753,104 @@ class DACServer(LabradServer):
     def GetMultipoleStepState(self, c):
         return self.multipole_step is None
 
+
+    @setting(25, "Start Multi Sweep", sweep_names='*s', sweep_limits='**v', dwell_time='v', repeat='b', restore_center='b')
+    def start_multi_sweep(self, c, sweep_names, sweep_limits, dwell_time, repeat, restore_center):
+        if hasattr(self, 'multi_sweep_loop'):
+            if self.multi_sweep_loop.running:
+                self.multi_sweep_loop.stop()
+            
+        self.sweep_state={
+            'sweepnames':sweep_names,
+            'sweeplimits': sweep_limits,
+            'indices':[0]*len(sweep_names),
+            'repeat':repeat,
+            'context':c,
+            'cycle_count':0,
+            'restore_center': restore_center
+        }
+        print self.sweep_state['sweepnames']
+        # print self.sweep_state['sweeplimits']
+        self.state_before_loop=self.getMultipoleValues(c)
+
+        self.multipole_sweep_values={}
+
+        for name, (start, stop, step) in zip(self.sweep_state["sweepnames"], self.sweep_state["sweeplimits"]):
+            no_of_values=(stop-start)/step+1
+            self.multipole_sweep_values[name]=np.linspace(start, stop, no_of_values, endpoint=True)
+
+        self.multi_sweep_loop=LoopingCall(self._multi_sweep_step)
+        self.multi_sweep_loop.start(dwell_time)
+
+    @inlineCallbacks
+    def _multi_sweep_step(self):
+        state=self.sweep_state
+
+        current_values=self.getMultipoleValues(state["context"])
+        # print "Current Values before change: ", current_values
+        dict_current_values=dict(current_values)
+        # print self.multipole_sweep_values.items()
+
+        for (name, values), idx in zip(self.multipole_sweep_values.items(),
+                                     state['indices']
+                                       ):
+            print name, values, idx
+            dict_current_values[name]=values[idx]
+        current_values=dict_current_values.items()
+        print "Multipole values: ", current_values
+
+        self.queue.reset()
+        yield self.setMultipoleValues(
+            state["context"],
+            current_values,
+            self.control.position
+        )
+        self.notifyAllListeners(state["context"])
+
+        wrapped=self._advance_indices()
+        print self.sweep_state["indices"]
+
+        if wrapped and not state["repeat"]:
+            self.stopMultiSweep(state["context"])
+
+    def _advance_indices(self):
+        indices=self.sweep_state['indices']
+        sweeps=self.multipole_sweep_values.items()
+
+        for i in reversed(range(len(indices))):
+            indices[i]+=1
+
+            if indices[i] < len(sweeps[i][1]):
+                return False
+            
+            indices[i]=0
+        self.sweep_state['cycle_count']+=1
+
+        return True
+    
+    @setting(26, "Stop Multi Sweep", returns='b')
+    def stopMultiSweep(self, c):
+        if hasattr(self, 'multi_sweep_loop'):
+            if self.multi_sweep_loop.running:
+                self.multi_sweep_loop.stop()
+                self.notifyAllListeners(c)
+                print "Stopped multi sweep"
+                if self.sweep_state["restore_center"]:
+                    self.setMultipoleValues(c, self.state_before_loop, self.control.position)
+                    print "Restored multipoles from before the sweep"
+                return True
+        self.notifyAllListeners(c)  
+        return False
+
+    def getTotalPoints(self):
+
+        total=1
+
+        for name, values in self.sweep_state['sweeps']:
+            total *= len(values)
+
+        return total
+
     
     def initContext(self, c):
         self.listeners.add(c.ID)
