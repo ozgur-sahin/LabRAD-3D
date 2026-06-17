@@ -91,6 +91,7 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
 
         self.multipole_oscillation_state = yield self.dacserver.get_multipole_oscillation_state()
         self.multipole_step_state = yield self.dacserver.get_multipole_step_state()
+        self.multiple_sweep_state = yield self.dacserver.get_multiple_sweep_state()
 
         self.SweepTabWidget = QtGui.QTabWidget()
 
@@ -98,9 +99,10 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.MultipoleStepWidget = self.makeMultipoleStepBox()
         self.MultipleMultipoleSweepWidget=self.makeMultipleMultipoleSweepBox(3)
 
+        self.SweepTabWidget.addTab(self.MultipleMultipoleSweepWidget, '&Multiple Sweep')
         self.SweepTabWidget.addTab(self.MultipoleStepWidget, "&Step")
         self.SweepTabWidget.addTab(self.MultipoleSweepWidget, "&Sweep")
-        self.SweepTabWidget.addTab(self.MultipleMultipoleSweepWidget, '&Multiple Sweep')
+
         
         self.ctrlPosButtonLayout.addWidget(self.SweepTabWidget)
 
@@ -255,18 +257,82 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         box.setLayout(layout)
         return box
     
-    def makeMultipleMultipoleSweepBox(self, n=3):
+    def makeMultipleMultipoleSweepBox(self, n=3, defaults=['Ez', 'Ex', 'Ey']):
         '''n is the number of swept multipoles'''
         box = QtGui.QGroupBox('Multiple Multipole Sweep')
         layout = QtGui.QGridLayout()
-        self.MultipoleSweepBoxes = [None]*n
-        
+        self.multipoleboxes = [None]*n
+        self.multipolecenter=[None]*n
+        self.multipolespan=[None]*n
+        self.multipolestep=[None]*n
+        # layout.addWidget(QtGui.QLabel("Multipole Name"), 0, 1)
+        layout.addWidget(QtGui.QLabel("Center"), 0, 2)
+        layout.addWidget(QtGui.QLabel("Span"), 0, 3)
+        layout.addWidget(QtGui.QLabel("Step"), 0, 4)
+        layout.setRowStretch(0, 0)
+
         for i in range(n):
             self.multipoleboxes[i]=QtGui.QComboBox()
             self.multipoleboxes[i].addItems(self.multipoles)
-            layout.addWidget(QtGui.QLabel("Multipole "+str(i)), i, 0)
-            layout.addWidget(self.multipoleboxes[i], i, 1)
 
+            self.multipolecenter[i]=QtGui.QDoubleSpinBox()
+            self.multipolecenter[i].setDecimals(3)
+            self.multipolecenter[i].setRange(0.0, 1.5)
+            self.multipolecenter[i].setSingleStep(0.01)
+            self.multipolecenter[i].setValue(0)
+
+            self.multipolespan[i]=QtGui.QDoubleSpinBox()
+            self.multipolespan[i].setDecimals(3)
+            self.multipolespan[i].setRange(0.0, 1.5)
+            self.multipolespan[i].setSingleStep(0.01)
+            self.multipolespan[i].setValue(0.05)
+
+            self.multipolestep[i]=QtGui.QDoubleSpinBox()
+            self.multipolestep[i].setDecimals(3)
+            self.multipolestep[i].setRange(0.0, 0.5)
+            self.multipolestep[i].setSingleStep(0.01)
+            self.multipolestep[i].setValue(0.01)
+
+            layout.addWidget(QtGui.QLabel("Multipole "+str(i+1)), i+1, 0)
+            layout.addWidget(self.multipoleboxes[i], i+1, 1)
+            layout.addWidget(self.multipolecenter[i], i+1, 2)
+            layout.addWidget(self.multipolespan[i], i+1, 3)
+            layout.addWidget(self.multipolestep[i], i+1, 4)
+            layout.setRowStretch(i+1, 2)
+
+        self.setDefaultMultipleSweepMultipole(defaults)
+        self.dwell_time_box=QtGui.QDoubleSpinBox()
+        self.dwell_time_box.setDecimals(3)
+        self.dwell_time_box.setRange(0.5, 20.0)
+        self.dwell_time_box.setSingleStep(0.1)
+        self.dwell_time_box.setValue(1.0)
+
+        self.multipleSweepRestoreCenter = QtGui.QCheckBox('Restore center on stop')
+        self.multipleSweepRestoreCenter.setChecked(False)
+
+        self.multipleSweepRepeat = QtGui.QCheckBox('Repeat')
+        self.multipleSweepRepeat.setChecked(True)
+
+        self.multipleSweepUseCurrentButton = QtGui.QPushButton('Use Current')
+        self.multipleSweepStartButton = QtGui.QPushButton('Start')
+        self.multipleSweepStopButton = QtGui.QPushButton('Stop')
+        self.multipleSweepStartButton.setEnabled(self.multipole_step_state)
+        self.multipleSweepStopButton.setEnabled(not self.multipole_step_state)
+        self.MultipleSweepStatus = QtGui.QLabel('Idle')
+
+        layout.addWidget(QtGui.QLabel("Dwell Time [s]"), n+1, 0)
+        layout.addWidget(self.dwell_time_box, n+1, 2)
+        layout.addWidget(self.multipleSweepRestoreCenter, n+2, 0, 1, 2)
+        layout.addWidget(self.multipleSweepRepeat, n+2, 2, 1, 2)
+        layout.addWidget(self.multipleSweepUseCurrentButton, n+3, 0, 1, 5)
+        layout.addWidget(self.multipleSweepStartButton, n+4, 0, 1, 2)
+        layout.addWidget(self.multipleSweepStopButton, n+4, 2, 1, 3)
+
+        self.multipleSweepStartButton.released.connect(self.startMultiSweep)
+        self.multipleSweepStopButton.released.connect(self.StopMultiSweep)
+        self.multipleSweepUseCurrentButton.released.connect(self.useCurrentMultipleSweepCenter)
+        self.multipleSweepRepeat.stateChanged.connect(self.RepeatStateChanged)
+   
 
         box.setLayout(layout)
         return box
@@ -280,6 +346,12 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         index = self.stepMultipole.findText(multipole)
         if index >= 0:
             self.stepMultipole.setCurrentIndex(index)
+    
+    def setDefaultMultipleSweepMultipole(self, multipoles):
+        for (box, mp) in zip(self.multipoleboxes, multipoles):
+            index = box.findText(mp)
+            if index >= 0:
+                box.setCurrentIndex(index)
         
     @inlineCallbacks
     def connect(self):
@@ -409,6 +481,15 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
             return
         self.stepCenter.setValue(center)
 
+    def useCurrentMultipleSweepCenter(self):
+        for mpbox, centerbox in zip(self.multipoleboxes, self.multipolecenter):
+            multipole = str(mpbox.currentText())
+            try:
+                center = self.controls[multipole].spinLevel.value()
+            except KeyError:
+                return
+            centerbox.setValue(center)
+
     @inlineCallbacks
     def startMultipoleSweep(self):
         multipole = str(self.sweepMultipole.currentText())
@@ -417,7 +498,6 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         frequency = float(self.sweepFrequency.value())
         update_rate = float(self.sweepUpdateRate.value())
 
-        self.sweepStartButton.setEnabled(False)
         self.sweepStatus.setText('Starting...')
         try:
             yield self.dacserver.start_multipole_oscillation(
@@ -434,6 +514,8 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
             msgBox.exec_()
             return
 
+        self.sweepStartButton.setEnabled(False)
+        
         self.sweepStopButton.setEnabled(True)
         self.sweepStatus.setText('Running: ' + multipole)
 
@@ -513,18 +595,79 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
 
     @inlineCallbacks
     def startMultiSweep(self):
-        sweep_names=('Ez', 'Ey', 'Ex')
-        sweep_limits=[
-            [0.0, 1.0, 0.5],
-            [0.0, 0.4, 0.2],
-            [-1.0, 1.0, 0.5],
-        ]
-        
-        yield self.dacserver.start_multi_sweep(sweep_names, sweep_limits, 1.0, False, True)
+        # sweep_names=('Ez', 'Ey', 'Ex')
+        # sweep_limits=[
+        #     [0.0, 1.0, 0.5],
+        #     [0.0, 0.4, 0.2],
+        #     [-1.0, 1.0, 0.5],
+        # ]
 
+        sweep_names=[]
+        sweep_limits=[]
+        for mpbox, mpcenter, mpspan, mpstep in zip(self.multipoleboxes,
+                                                   self.multipolecenter,
+                                                   self.multipolespan,
+                                                   self.multipolestep):
+            sweep_names.append(str(mpbox.currentText()))
+            mpstart=float(mpcenter.value()-mpspan.value())
+            mpstop=float(mpcenter.value()+mpspan.value())
+            limits=[mpstart, mpstop, mpstep.value()]
+            sweep_limits.append(limits)
+        
+        dwell_time=float(self.dwell_time_box.value())
+        repeat=bool(self.multipleSweepRepeat.isChecked())
+
+        print sweep_names
+        print sweep_limits
+
+        try:
+            yield self.dacserver.start_multi_sweep(sweep_names, sweep_limits, dwell_time, repeat)
+        except Exception, e:
+            self.MultipleSweepStatus.setText('Start failed')
+            self.sweepStartButton.setEnabled(True)
+            msgBox = QtGui.QMessageBox(
+                QtGui.QMessageBox.Warning,
+                'Multipole Sweep',
+                str(e)
+            )
+            msgBox.exec_()
+            return
+
+        self.multipleSweepStartButton.setEnabled(False)
+        self.multipleSweepStopButton.setEnabled(True)
+        
     @inlineCallbacks
     def StopMultiSweep(self):
-        yield self.dacserver.stop_multi_sweep()
+        restore_center=bool(self.multipleSweepRestoreCenter.isChecked())
+
+        self.multipleSweepStopButton.setEnabled(False)
+        self.MultipleSweepStatus.setText('Stopping...')
+        try:
+            yield self.dacserver.stop_multi_sweep(restore_center)
+        except Exception, e:
+            self.MultipleSweepStatus.setText('Stop failed')
+            self.multipleSweepStopButton.setEnabled(True)
+            msgBox = QtGui.QMessageBox(
+                QtGui.QMessageBox.Warning,
+                'Multipole Step',
+                str(e)
+            )
+            msgBox.exec_()
+            return
+
+        self.multipleSweepStartButton.setEnabled(True)
+        self.MultipleSweepStatus.setText('Idle')
+
+    @inlineCallbacks
+    def RepeatStateChanged(self):
+        print "GUI saw the repeat change"
+        repeat_state=self.multipleSweepRepeat.isChecked()
+        result = yield self.dacserver.change_repeat(repeat_state)
+        if result:
+            print "Repeat state successfully updated"
+        else:
+            print "Repeat state failed to update"
+
         
 
         

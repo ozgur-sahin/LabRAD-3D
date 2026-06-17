@@ -210,6 +210,7 @@ class DACServer(LabradServer):
     api = api()
     multipole_oscillation = None
     multipole_step = None
+    multiple_multipole_sweep=False
 
     registry_path = ['', 'Servers', hc.EXPNAME + SERVERNAME]
     dac_dict = dict(hc.elec_dict.items() + hc.sma_dict.items())
@@ -754,8 +755,8 @@ class DACServer(LabradServer):
         return self.multipole_step is None
 
 
-    @setting(25, "Start Multi Sweep", sweep_names='*s', sweep_limits='**v', dwell_time='v', repeat='b', restore_center='b')
-    def start_multi_sweep(self, c, sweep_names, sweep_limits, dwell_time, repeat, restore_center):
+    @setting(25, "Start Multi Sweep", sweep_names='*s', sweep_limits='**v', dwell_time='v', repeat='b')
+    def start_multi_sweep(self, c, sweep_names, sweep_limits, dwell_time, repeat):
         if hasattr(self, 'multi_sweep_loop'):
             if self.multi_sweep_loop.running:
                 self.multi_sweep_loop.stop()
@@ -767,7 +768,6 @@ class DACServer(LabradServer):
             'repeat':repeat,
             'context':c,
             'cycle_count':0,
-            'restore_center': restore_center
         }
         print self.sweep_state['sweepnames']
         # print self.sweep_state['sweeplimits']
@@ -780,6 +780,7 @@ class DACServer(LabradServer):
             self.multipole_sweep_values[name]=np.linspace(start, stop, no_of_values, endpoint=True)
 
         self.multi_sweep_loop=LoopingCall(self._multi_sweep_step)
+        self.multiple_multipole_sweep=True
         self.multi_sweep_loop.start(dwell_time)
 
     @inlineCallbacks
@@ -794,12 +795,11 @@ class DACServer(LabradServer):
         for dim, name in enumerate(self.sweep_state["sweepnames"]):
             reverse=sum(state['indices'][dim+1:])%2
             idx=state['indices'][dim]
-            print "reverse=", bool(reverse)
+            # print "reverse=", bool(reverse)
             if reverse:
                 idx=len(self.multipole_sweep_values[name])-1-idx
             print name, self.multipole_sweep_values[name], idx
             dict_current_values[name]=self.multipole_sweep_values[name][idx]
-
 
         current_values=dict_current_values.items()
         print "Multipole values: ", current_values
@@ -816,7 +816,7 @@ class DACServer(LabradServer):
         print self.sweep_state["indices"]
 
         if wrapped and not state["repeat"]:
-            self.stopMultiSweep(state["context"])
+            self.stopMultiSweep(state["context"], True)
 
     def _advance_indices(self):
         indices=self.sweep_state['indices']
@@ -833,19 +833,33 @@ class DACServer(LabradServer):
 
         return True
     
-    @setting(26, "Stop Multi Sweep", returns='b')
-    def stopMultiSweep(self, c):
+    @setting(26, "Stop Multi Sweep", restore_center='b', returns='b')
+    def stopMultiSweep(self, c, restore_center):
         if hasattr(self, 'multi_sweep_loop'):
             if self.multi_sweep_loop.running:
                 self.multi_sweep_loop.stop()
+                self.multiple_multipole_sweep=False
                 self.notifyAllListeners(c)
                 print "Stopped multi sweep"
-                if self.sweep_state["restore_center"]:
+                if restore_center:
                     self.setMultipoleValues(c, self.state_before_loop, self.control.position)
                     print "Restored multipoles from before the sweep"
                 return True
         self.notifyAllListeners(c)  
         return False
+    
+    @setting(27, "Get Multiple Sweep State", returns='b')
+    def GetMultipleSweepState(self, c):
+        return self.multiple_multipole_sweep
+    
+    @setting(28, "Change Repeat", repeat_state='b', returns='b')
+    def ChangeRepeat(self, c, repeat_state):
+        try:
+            self.sweep_state['repeat']=repeat_state
+            return True
+        except:
+            return False
+
 
     def getTotalPoints(self):
 
