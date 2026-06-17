@@ -331,7 +331,8 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.multipleSweepStartButton.released.connect(self.startMultiSweep)
         self.multipleSweepStopButton.released.connect(self.StopMultiSweep)
         self.multipleSweepUseCurrentButton.released.connect(self.useCurrentMultipleSweepCenter)
-        self.multipleSweepRepeat.stateChanged.connect(self.RepeatStateChanged)
+        self.multipleSweepRepeat.stateChanged.connect(self.RepeatorRestoreCenterStateChanged)
+        self.multipleSweepRestoreCenter.stateChanged.connect(self.RepeatorRestoreCenterStateChanged)
    
 
         box.setLayout(layout)
@@ -595,13 +596,6 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
 
     @inlineCallbacks
     def startMultiSweep(self):
-        # sweep_names=('Ez', 'Ey', 'Ex')
-        # sweep_limits=[
-        #     [0.0, 1.0, 0.5],
-        #     [0.0, 0.4, 0.2],
-        #     [-1.0, 1.0, 0.5],
-        # ]
-
         sweep_names=[]
         sweep_limits=[]
         for mpbox, mpcenter, mpspan, mpstep in zip(self.multipoleboxes,
@@ -616,12 +610,13 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         
         dwell_time=float(self.dwell_time_box.value())
         repeat=bool(self.multipleSweepRepeat.isChecked())
+        restore_center=bool(self.multipleSweepRestoreCenter.isChecked())
 
         print sweep_names
         print sweep_limits
 
         try:
-            yield self.dacserver.start_multi_sweep(sweep_names, sweep_limits, dwell_time, repeat)
+            yield self.dacserver.start_multi_sweep(sweep_names, sweep_limits, dwell_time, repeat, restore_center)
         except Exception, e:
             self.MultipleSweepStatus.setText('Start failed')
             self.sweepStartButton.setEnabled(True)
@@ -638,12 +633,12 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         
     @inlineCallbacks
     def StopMultiSweep(self):
-        restore_center=bool(self.multipleSweepRestoreCenter.isChecked())
+        # restore_center=bool(self.multipleSweepRestoreCenter.isChecked())
 
         self.multipleSweepStopButton.setEnabled(False)
         self.MultipleSweepStatus.setText('Stopping...')
         try:
-            yield self.dacserver.stop_multi_sweep(restore_center)
+            yield self.dacserver.stop_multi_sweep()
         except Exception, e:
             self.MultipleSweepStatus.setText('Stop failed')
             self.multipleSweepStopButton.setEnabled(True)
@@ -659,10 +654,10 @@ class MULTIPOLE_CONTROL(QtGui.QWidget):
         self.MultipleSweepStatus.setText('Idle')
 
     @inlineCallbacks
-    def RepeatStateChanged(self):
-        print "GUI saw the repeat change"
+    def RepeatorRestoreCenterStateChanged(self, state):
         repeat_state=self.multipleSweepRepeat.isChecked()
-        result = yield self.dacserver.change_repeat(repeat_state)
+        restore_center_state=self.multipleSweepRestoreCenter.isChecked()
+        result = yield self.dacserver.change_repeat_or_restore_center(repeat_state, restore_center_state)
         if result:
             print "Repeat state successfully updated"
         else:
